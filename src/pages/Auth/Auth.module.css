@@ -1,0 +1,135 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 28px 18px;
+  background:
+    radial-gradient(circle at 85% 12%, #d9f2f5 0, transparent 38%),
+    linear-gradient(145deg, #f8fafc, #eaf2f7);
+  color: #102038;
+}
+
+.card {
+  width: min(100%, 480px);
+  background: white;
+  border: 1px solid #e3ebf0;
+  border-radius: 24px;
+  padding: clamp(24px, 5vw, 42px);
+  box-shadow: 0 22px 65px rgba(14, 47, 76, 0.08);
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: #071c38;
+  margin-bottom: 38px;
+}
+
+.eyebrow {
+  color: #087d91;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.card h1 {
+  font-size: clamp(30px, 5vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -1.3px;
+  margin: 12px 0;
+}
+
+.description {
+  color: #65758a;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.form label {
+  font-size: 13px;
+  font-weight: 750;
+  margin-top: 8px;
+}
+
+.form input {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid #dce5ed;
+  border-radius: 12px;
+  background: #fbfdfe;
+  padding: 0 15px;
+  color: #102038;
+  font: inherit;
+  outline: none;
+}
+
+.form input:focus {
+  border-color: #087d91;
+  box-shadow: 0 0 0 3px #087d911c;
+}
+
+.note {
+  color: #7c8b9a;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+.primary {
+  min-height: 54px;
+  border: 0;
+  border-radius: 12px;
+  background: #087d91;
+  color: white;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.primary:hover {
+  background: #056b7c;
+}
+
+.bottom {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: #65758a;
+}
+
+.bottom a {
+  color: #087d91;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.textButton {
+  display: block;
+  margin: 20px auto 0;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 16px;
+    align-items: start;
+  }
+
+  .card {
+    border-radius: 20px;
+    margin-top: 20px;
+  }
+}

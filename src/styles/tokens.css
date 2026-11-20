@@ -1,0 +1,54 @@
+/* ==========================================
+   MATSYA SATHI — DESIGN TOKENS
+   Theme: Coastal Intelligence
+   ========================================== */
+
+:root {
+  /* Deep ocean colors */
+  --ocean-950: #071c30;
+  --ocean-900: #0b2545;
+  --ocean-700: #1863a6;
+
+  /* Coastal accent colors */
+  --sea-glass: #158498;
+  --sky-100: #bde9ff;
+  --sand-100: #efe6d8;
+  --gold-500: #e3a857;
+
+  /* Backgrounds */
+  --surface: #f4f8fc;
+  --paper: #ffffff;
+
+  /* Typography colors */
+  --text: #0b2545;
+  --muted: #4b6178;
+
+  /* Status colors */
+  --success: #0e766e;
+  --danger: #d90429;
+
+  /* Border radius */
+  --radius-card: 18px;
+  --radius-control: 12px;
+
+  /* Layout */
+  --content-max: 1280px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Typography */
+  --font-heading: "Outfit", sans-serif;
+  --font-body: "Manrope", "Noto Sans Devanagari", sans-serif;
+
+  /* Animation */
+  --transition-fast: 120ms ease;
+  --transition-normal: 240ms ease;
+}
