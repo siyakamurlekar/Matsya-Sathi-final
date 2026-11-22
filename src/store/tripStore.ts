@@ -1,32 +1,101 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { getCurrentTrip, getFamilyTrips, resetTrip, startTrip, updateTripStatus } from '../services/tripApi'
 
 export type TripStatus = 'IDLE' | 'CHECK_IN' | 'TRIP_ACTIVE' | 'CONNECTIVITY_WEAK' | 'LORA_RELAY' | 'SOS_SENT' | 'EMERGENCY_ACTIVE' | 'SAFE_RETURN'
 type TripState = {
+  tripId: string | null
   status: TripStatus
   lastUpdate: string | null
   battery: number
   lastLocation: string
-  setStatus: (status: TripStatus) => void
-  resetDemo: () => void
+  loading: boolean
+  error: string | null
+  setStatus: (status: TripStatus) => Promise<void>
+  resetDemo: () => Promise<void>
+  loadCurrent: () => Promise<void>
+  loadFamily: () => Promise<void>
 }
-const initial = { status: 'IDLE' as TripStatus, lastUpdate: null, battery: 92, lastLocation: 'Not available' }
-const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('matsya-trip-sync') : null
+const initial = { tripId: null, status: 'IDLE' as TripStatus, lastUpdate: null, battery: 92, lastLocation: 'Not available' }
 export const useTripStore = create<TripState>()(persist((set) => ({
   ...initial,
-  setStatus: (status) => {
-    const next = { status, lastUpdate: new Date().toISOString(), battery: status === 'LORA_RELAY' ? 71 : status === 'SAFE_RETURN' ? 64 : 88, lastLocation: status === 'IDLE' ? 'Not available' : 'Demo point · Arabian Sea, Goa' }
-    set(next)
-    channel?.postMessage(next)
+  loading: false,
+  error: null,
+  setStatus: async (status) => {
+    set({ loading: true, error: null })
+    try {
+      let tripId = useTripStore.getState().tripId
+      let trip
+      if (!tripId) {
+        const result = await startTrip()
+        trip = result.trip
+        tripId = trip.id
+      }
+      if (status !== 'CHECK_IN') {
+        if (!tripId) return
+        const result = await updateTripStatus(tripId, status)
+        trip = result.trip
+      }
+      if (trip) {
+        set({
+          tripId: trip.active ? trip.id : null,
+          status: trip.status,
+          lastUpdate: trip.lastUpdatedAt,
+          battery: trip.battery,
+          lastLocation: trip.lastLocation,
+          loading: false,
+          error: null,
+        })
+      }
+    } catch (error) {
+      set({
+        loading: false,
+        error: error instanceof Error ? error.message : 'Unable to update trip',
+      })
+      console.error(error)
+    }
   },
-  resetDemo: () => {
-    set(initial)
-    channel?.postMessage(initial)
+  resetDemo: async () => {
+    set({ loading: true, error: null })
+    try {
+      await resetTrip()
+      set({ ...initial, loading: false, error: null })
+    } catch (error) {
+      set({
+        loading: false,
+        error: error instanceof Error ? error.message : 'Unable to reset trip',
+      })
+      console.error(error)
+    }
+  },
+  loadCurrent: async () => {
+    try {
+      const result = await getCurrentTrip()
+      const trip = result.trip
+      set(trip ? {
+        tripId: trip.id,
+        status: trip.status,
+        lastUpdate: trip.lastUpdatedAt,
+        battery: trip.battery,
+        lastLocation: trip.lastLocation,
+      } : initial)
+    } catch (error) {
+      console.error(error)
+    }
+  },
+  loadFamily: async () => {
+    try {
+      const result = await getFamilyTrips()
+      const trip = result.trips[0]
+      set(trip ? {
+        tripId: trip.id,
+        status: trip.status,
+        lastUpdate: trip.lastUpdatedAt,
+        battery: trip.battery,
+        lastLocation: trip.lastLocation,
+      } : initial)
+    } catch (error) {
+      console.error(error)
+    }
   },
 }), { name: 'matsya-trip-demo' }))
-if (channel) channel.onmessage = (event: MessageEvent) => {
-  const value = event.data as Partial<TripState>
-  if (value && typeof value.status === 'string') {
-    useTripStore.setState({ status: value.status, lastUpdate: value.lastUpdate ?? null, battery: value.battery ?? 92, lastLocation: value.lastLocation ?? 'Not available' })
-  }
-}

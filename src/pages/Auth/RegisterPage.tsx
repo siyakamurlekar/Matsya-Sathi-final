@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import styles from './Auth.module.css'
 import { useTranslation } from 'react-i18next'
+import { register as registerApi } from '../../services/authApi'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -13,6 +14,8 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('')
   const [village, setVillage] = useState('')
   const [boatName, setBoatName] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
   if (user) {
     return <Navigate to={user.role === 'fisherman' ? '/fisherman' : '/family'} replace />
@@ -22,21 +25,31 @@ export default function RegisterPage() {
     return <Navigate to="/role" replace />
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
     if (!name.trim() || !/^[6-9]\d{9}$/.test(phone) || !village.trim()) return
+    setError('')
 
-    localStorage.setItem(
-      'matsya-profile',
-      JSON.stringify({ name, phone, village, boatName, role: selectedRole })
-    )
-
-    login({ name: name.trim(), phone, role: selectedRole })
-
-    navigate(selectedRole === 'fisherman' ? '/fisherman' : '/family', {
-      replace: true,
-    })
+    try {
+      const result = await registerApi({
+        name: name.trim(),
+        phone,
+        password,
+        role: selectedRole,
+        village: village.trim(),
+        boatName: boatName.trim(),
+      })
+      localStorage.setItem('matsya-api-token', result.token)
+      login({
+        name: result.user.name,
+        phone: result.user.phone,
+        role: result.user.role,
+      })
+      navigate(result.user.role === 'fisherman' ? '/fisherman' : '/family', { replace: true })
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to create account')
+    }
   }
 
   return (
@@ -96,6 +109,19 @@ export default function RegisterPage() {
               />
             </>
           )}
+
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            minLength={8}
+            maxLength={72}
+            autoComplete="new-password"
+            required
+          />
+          {error && <p role="alert" className={styles.note}>{error}</p>}
 
           <p className={styles.note}>
             {t('localProfileNote')}

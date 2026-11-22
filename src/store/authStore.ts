@@ -18,7 +18,10 @@ export const useAuthStore = create<AuthState>()(
     user: null,
     setSelectedRole: (role) => set({ selectedRole: role }),
     login: (user) => set({ user, selectedRole: user.role }),
-    logout: () => set({ user: null, selectedRole: null }),
+    logout: () => {
+      localStorage.removeItem('matsya-api-token')
+      set({ user: null, selectedRole: null })
+    },
   }), {
     name: 'matsya-auth-tab-v2',
     storage: createJSONStorage(() => sessionStorage),

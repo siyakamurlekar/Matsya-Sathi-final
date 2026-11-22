@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../../store/authStore'
 import i18n from '../../i18n'
 import styles from './Updates.module.css'
+import { updateProfile } from '../../services/authApi'
 
 const languages = [{code:'kok',label:'कोंकणी · Konkani'},{code:'en',label:'English'},{code:'mr',label:'मराठी · Marathi'},{code:'hi',label:'हिन्दी · Hindi'}]
 export default function ProfilePage() {
@@ -15,7 +16,17 @@ export default function ProfilePage() {
   const [name, setName] = useState(user?.name || '')
   const [saved, setSaved] = useState(false)
   const home = user?.role === 'family' ? '/family' : '/fisherman'
-  const save = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!user || !name.trim()) return; login({...user, name:name.trim()}); setSaved(true) }
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!user || !name.trim()) return
+    try {
+      const result = await updateProfile({ name: name.trim() })
+      login({ ...user, name: result.user.name })
+      setSaved(true)
+    } catch (error) {
+      console.error(error)
+    }
+  }
   const switchLanguage = (code: string) => { localStorage.setItem('matsya-language',code); void i18n.changeLanguage(code) }
   return <main className={styles.page}><div className={styles.wrap}>
     <div className={styles.top}><button className={styles.back} onClick={() => navigate(home)}>← {t('back')}</button><span className={styles.eyebrow}>{t('profileEyebrow')}</span></div>

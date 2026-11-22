@@ -1,5 +1,47 @@
 # React + TypeScript + Vite
 
+## Matsya Sathi backend
+
+The initial backend provides MongoDB-backed registration, login, current-user, and profile APIs.
+
+1. Copy `.env.example` to `.env`.
+2. Set `MONGODB_URI` to a reachable MongoDB instance and replace `JWT_SECRET`.
+3. Start MongoDB, then run:
+
+   ```powershell
+   npm run dev:server
+   npm run dev
+   ```
+
+The frontend is available through Vite on `http://localhost:5173`; it proxies `/api` to `http://localhost:4000`.
+
+API endpoints:
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `PATCH /api/auth/me`
+- `GET /api/health`
+- `POST /api/trips`
+- `PATCH /api/trips/:id/status`
+- `POST /api/trips/:id/location`
+- `GET /api/trips/current`
+- `GET /api/trips/family/current`
+- `GET /api/trips/:id/events`
+- `DELETE /api/trips/current`
+- `POST /api/trips/family-links`
+- `GET /api/trips/family-links`
+- `GET /api/sea/current`
+- `POST /api/sea/provider`
+- `POST /api/sea/refresh`
+- `GET /api/schemes`
+- `GET /api/schemes/:id`
+- `POST /api/schemes/match`
+- `GET /api/notifications`
+- `PATCH /api/notifications/:id/read`
+- `POST /api/notifications/read-all`
+- `GET /api/realtime/events?token=JWT`
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

@@ -3,13 +3,65 @@ import { useAuthStore } from '../../store/authStore'
 import styles from '../../styles/Dashboard.module.css'
 import { useTranslation } from 'react-i18next'
 import { useTripStore } from '../../store/tripStore'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { getFamilyLinks, linkFisherman, type FamilyLink } from '../../services/tripApi'
 
 export default function FamilyDashboardPage() {
   const navigate = useNavigate()
-  const { status, lastLocation } = useTripStore()
+  const { status, lastLocation, loadFamily } = useTripStore()
   const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
+  const [phone, setPhone] = useState('')
+  const [links, setLinks] = useState<FamilyLink[]>([])
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+
+  const loadLinks = useCallback(async () => {
+    try {
+      const result = await getFamilyLinks()
+      setLinks(result.links)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to load linked fishermen')
+    }
+  }, [])
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void loadLinks()
+      void loadFamily()
+    })
+    const token = localStorage.getItem('matsya-api-token')
+    const events = token ? new EventSource(`/api/realtime/events?token=${encodeURIComponent(token)}`) : null
+    events?.addEventListener('trip:update', () => void loadFamily())
+    const timer = window.setInterval(() => void loadFamily(), 30000)
+    const refreshOnFocus = () => void loadFamily()
+    window.addEventListener('focus', refreshOnFocus)
+
+    return () => {
+      window.clearInterval(timer)
+      events?.close()
+      window.removeEventListener('focus', refreshOnFocus)
+    }
+  }, [loadFamily, loadLinks])
+
+  const connectFisherman = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError('')
+    setMessage('')
+    try {
+      const result = await linkFisherman(phone)
+      setLinks((current) =>
+        current.some((link) => link.fishermanId === result.link.fishermanId)
+          ? current
+          : [...current, result.link],
+      )
+      setPhone('')
+      setMessage(`Linked with ${result.link.name}`)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to connect fisherman')
+    }
+  }
 
   return (
     <main className={styles.page}>
@@ -58,6 +110,52 @@ export default function FamilyDashboardPage() {
 
           <div className={styles.heroIcon} aria-hidden="true">
             🛟
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeading}>
+            <h2>Connected fishermen</h2>
+            <span className={styles.muted}>Family links</span>
+          </div>
+
+          <div className={styles.linkPanel}>
+            <form className={styles.linkForm} onSubmit={connectFisherman}>
+              <label htmlFor="fisherman-phone">Fisherman phone number</label>
+              <input
+                id="fisherman-phone"
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
+                pattern="[6-9][0-9]{9}"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value.replace(/\D/g, ''))}
+                placeholder="9876543210"
+                required
+              />
+              <button className={styles.primaryButton} type="submit">
+                Connect fisherman
+              </button>
+            </form>
+
+            {message && <p className={styles.successMessage} role="status">{message}</p>}
+            {error && <p className={styles.errorMessage} role="alert">{error}</p>}
+
+            {links.length > 0 ? (
+              <div className={styles.linkList}>
+                {links.map((link) => (
+                  <article className={styles.linkCard} key={link.fishermanId}>
+                    <div>
+                      <strong>{link.name}</strong>
+                      <span>{link.phone}</span>
+                    </div>
+                    {link.boatName && <small>{link.boatName}</small>}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className={styles.muted}>No fishermen connected yet.</p>
+            )}
           </div>
         </section>
 

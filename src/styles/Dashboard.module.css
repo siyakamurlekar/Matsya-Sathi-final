@@ -161,6 +161,83 @@
   gap: 16px;
 }
 
+.linkPanel {
+  background: white;
+  border: 1px solid #e2eaf0;
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.linkForm {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.linkForm label {
+  grid-column: 1 / -1;
+  color: #61758a;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.linkForm input {
+  min-width: 0;
+  height: 48px;
+  border: 1px solid #ccdbe4;
+  border-radius: 12px;
+  padding: 0 14px;
+  color: #102038;
+  background: #fbfdfe;
+}
+
+.linkForm .primaryButton {
+  height: 48px;
+  background: #087d91;
+  color: white;
+  padding-inline: 18px;
+}
+
+.linkList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.linkCard {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #e2eaf0;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.linkCard div,
+.linkCard span,
+.linkCard small {
+  display: block;
+}
+
+.linkCard span,
+.linkCard small {
+  color: #718096;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.successMessage {
+  color: #0e766e;
+  font-weight: 750;
+}
+
+.errorMessage {
+  color: #b42318;
+  font-weight: 750;
+}
+
 .actionCard {
   min-width: 0;
   display: flex;
@@ -272,6 +349,11 @@
   }
 
   .actions {
+    grid-template-columns: 1fr;
+  }
+
+  .linkForm,
+  .linkList {
     grid-template-columns: 1fr;
   }
 

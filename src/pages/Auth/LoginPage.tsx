@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import { login as loginApi } from '../../services/authApi'
 import styles from './Auth.module.css'
 import { useTranslation } from 'react-i18next'
 
@@ -10,7 +11,8 @@ export default function LoginPage() {
   const { selectedRole, login, user } = useAuthStore()
 
   const [phone, setPhone] = useState('')
-  const [name, setName] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
   if (user) {
     return <Navigate to={user.role === 'fisherman' ? '/fisherman' : '/family'} replace />
@@ -20,21 +22,24 @@ export default function LoginPage() {
     return <Navigate to="/role" replace />
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
     if (!/^[6-9]\d{9}$/.test(phone)) return
-    if (!name.trim()) return
+    setError('')
 
-    login({
-      name: name.trim(),
-      phone,
-      role: selectedRole,
-    })
-
-    navigate(selectedRole === 'fisherman' ? '/fisherman' : '/family', {
-      replace: true,
-    })
+    try {
+      const result = await loginApi({ phone, password, role: selectedRole })
+      localStorage.setItem('matsya-api-token', result.token)
+      login({
+        name: result.user.name,
+        phone: result.user.phone,
+        role: result.user.role,
+      })
+      navigate(result.user.role === 'fisherman' ? '/fisherman' : '/family', { replace: true })
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to sign in')
+    }
   }
 
   return (
@@ -49,17 +54,6 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <label htmlFor="name">{t('nameLabel')}</label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t('enterName')}
-            required
-            minLength={2}
-          />
-
           <label htmlFor="phone">{t('phoneLabel')}</label>
           <input
             id="phone"
@@ -74,6 +68,18 @@ export default function LoginPage() {
             pattern="[6-9][0-9]{9}"
             required
           />
+
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            minLength={8}
+            autoComplete="current-password"
+            required
+          />
+          {error && <p role="alert" className={styles.note}>{error}</p>}
 
           <p className={styles.note}>
             {t('demoAccess')}

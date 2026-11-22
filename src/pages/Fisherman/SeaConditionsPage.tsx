@@ -1,15 +1,30 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import styles from './SeaConditionsPage.module.css'
+import { useEffect, useState } from 'react'
+import { getSeaConditions, refreshSeaConditions, type SeaData } from '../../services/dataApi'
 
 export default function SeaConditionsPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const [sea, setSea] = useState<SeaData | null>(null)
+  useEffect(() => {
+    void getSeaConditions().then(setSea).catch((error) => console.error(error))
+  }, [])
+  const refresh = async () => {
+    try {
+      await refreshSeaConditions()
+      setSea(await getSeaConditions())
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  const reading = sea?.reading
   const readings = [
-    { icon: '💨', label: t('seaWind'), value: '12', unit: 'km/h', detail: t('seaWindDetail') },
-    { icon: '🌊', label: t('seaWaves'), value: '0.8', unit: 'm', detail: t('seaWavesDetail') },
-    { icon: '👁️', label: t('seaVisibility'), value: '8', unit: 'km', detail: t('seaVisibilityDetail') },
-    { icon: '🌤️', label: t('seaSky'), value: t('seaPartlyCloudy'), unit: '', detail: t('seaSkyDetail') },
+    { icon: '💨', label: t('seaWind'), value: reading ? String(reading.windSpeedKph) : 'Unavailable', unit: 'km/h', detail: t('seaWindDetail') },
+    { icon: '🌊', label: t('seaWaves'), value: reading ? String(reading.waveHeightM) : 'Unavailable', unit: 'm', detail: t('seaWavesDetail') },
+    { icon: '👁️', label: t('seaVisibility'), value: reading ? String(reading.visibilityKm) : 'Unavailable', unit: 'km', detail: t('seaVisibilityDetail') },
+    { icon: '🌤️', label: t('seaSky'), value: reading?.sky || t('seaPartlyCloudy'), unit: '', detail: t('seaSkyDetail') },
   ]
   return (
     <main className={styles.page}>
@@ -17,7 +32,7 @@ export default function SeaConditionsPage() {
         <header className={styles.topbar}>
           <button className={styles.back} onClick={() => navigate('/fisherman')} aria-label={t('back')}>← <span>{t('back')}</span></button>
           <span className={styles.brand}>{t('brand')}</span>
-          <span className={styles.demo}>{t('seaDemoTag')}</span>
+          <span className={styles.demo}>{sea?.provenance === 'provider' ? 'Verified provider' : sea?.provenance === 'demo' ? t('seaDemoTag') : 'Unavailable'}</span>
         </header>
         <div className={styles.intro}>
           <span className={styles.eyebrow}>{t('seaEyebrow')}</span>
@@ -28,8 +43,8 @@ export default function SeaConditionsPage() {
           <div className={styles.heroCopy}>
             <span className={styles.heroTag}>◉ {t('seaIllustrative')}</span>
             <h2>{t('seaAdvisoryTitle')}</h2>
-            <p>{t('seaAdvisoryBody')}</p>
-            <span className={styles.heroFoot}>{t('seaNoLiveData')}</span>
+            <p>{reading?.advisory || t('seaAdvisoryBody')}</p>
+            <span className={styles.heroFoot}>{sea?.stale ? 'Stale data — refresh when available' : reading?.observedAt ? `Last updated ${new Date(reading.observedAt).toLocaleString()}` : t('seaNoLiveData')}</span>
           </div>
           <span className={styles.heroSymbol} aria-hidden="true">🌊</span>
         </section>
@@ -52,6 +67,7 @@ export default function SeaConditionsPage() {
         </section>
         <div className={styles.actions}>
           <button className={styles.secondary} onClick={() => navigate('/fisherman')}>← {t('seaBackDashboard')}</button>
+          <button className={styles.secondary} onClick={() => void refresh()}>Refresh sea data</button>
           <button className={styles.primary} onClick={() => navigate('/fisherman/trip')}>{t('seaPlanTrip')} →</button>
         </div>
         <p className={styles.disclaimer}>{t('seaDisclaimer')}</p>

@@ -2,10 +2,22 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useTripStore } from '../../store/tripStore'
 import styles from './Trip.module.css'
+import { useEffect } from 'react'
 export default function FamilyTrackingPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { status, battery, lastLocation, lastUpdate } = useTripStore()
+  const { status, battery, lastLocation, lastUpdate, loadFamily } = useTripStore()
+  useEffect(() => {
+    void loadFamily()
+    const token = localStorage.getItem('matsya-api-token')
+    const events = token ? new EventSource(`/api/realtime/events?token=${encodeURIComponent(token)}`) : null
+    events?.addEventListener('trip:update', () => void loadFamily())
+    const fallback = window.setInterval(() => void loadFamily(), 30000)
+    return () => {
+      window.clearInterval(fallback)
+      events?.close()
+    }
+  }, [loadFamily])
   const emergency = status === 'SOS_SENT' || status === 'EMERGENCY_ACTIVE'
   return <main className={styles.page}><div className={styles.wrap}>
     <button className={styles.back} onClick={() => navigate('/family')}>← {t('back')}</button>
