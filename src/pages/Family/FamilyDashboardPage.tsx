@@ -87,7 +87,7 @@ export default function FamilyDashboardPage() {
             {t('logout')}
           </button>
           <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
-            <button className={styles.outlineButton} onClick={() => navigate('/notifications')}>🔔 {t('notifications')}</button>
+            <button className={styles.outlineButton} onClick={() => navigate('/family/notifications')}>🔔 {t('notifications')}</button>
             <button className={styles.outlineButton} onClick={() => navigate('/profile')}>⚙️ {t('profileSettings')}</button>
           </div>
         </header>
@@ -204,7 +204,7 @@ export default function FamilyDashboardPage() {
 
             <button
               className={styles.actionCard}
-              onClick={() => navigate('/notifications')}
+              onClick={() => navigate('/family/notifications')}
             >
               <span className={styles.actionIcon}>🔔</span>
               <strong>{t('safetyNotifications')}</strong>
@@ -221,7 +221,7 @@ export default function FamilyDashboardPage() {
           <button onClick={() => navigate('/family/tracking')}>
             {t('tracking')}
           </button>
-          <button onClick={() => navigate('/notifications')}>
+          <button onClick={() => navigate('/family/notifications')}>
             {t('alerts')}
           </button>
         </nav>

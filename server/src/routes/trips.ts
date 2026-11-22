@@ -7,6 +7,7 @@ import { TripEvent } from '../models/TripEvent.js'
 import { User } from '../models/User.js'
 import { Notification } from '../models/Notification.js'
 import { publishRealtime } from '../services/realtime.js'
+import { JettyResponse } from '../models/JettyResponse.js'
 
 export const tripsRouter = Router()
 
@@ -18,6 +19,8 @@ const statusSchema = z.object({
 const locationSchema = z.object({
   location: z.string().trim().min(1).max(250),
   battery: z.number().int().min(0).max(100).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
 })
 
 const linkSchema = z.object({
@@ -33,10 +36,30 @@ function publicTrip(trip: InstanceType<typeof Trip>) {
     battery: trip.battery,
     lastLocation: trip.lastLocation,
     lastLocationAt: trip.lastLocationAt?.toISOString() || null,
+    latitude: trip.latitude ?? null,
+    longitude: trip.longitude ?? null,
     source: trip.source,
     startedAt: trip.createdAt?.toISOString() || null,
     lastUpdatedAt: trip.updatedAt?.toISOString() || null,
   }
+}
+
+function distanceKm(
+  latitudeA: number,
+  longitudeA: number,
+  latitudeB: number,
+  longitudeB: number,
+) {
+  const toRadians = (degrees: number) => degrees * Math.PI / 180
+  const earthRadiusKm = 6371
+  const latitudeDelta = toRadians(latitudeB - latitudeA)
+  const longitudeDelta = toRadians(longitudeB - longitudeA)
+  const a =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(toRadians(latitudeA)) *
+      Math.cos(toRadians(latitudeB)) *
+      Math.sin(longitudeDelta / 2) ** 2
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
 async function addEvent(trip: InstanceType<typeof Trip>, type: typeof TRIP_STATUSES[number], message = '') {
@@ -56,6 +79,8 @@ async function publishTripUpdate(trip: InstanceType<typeof Trip>, message: strin
   const recipients = new Set<string>([String(trip.fisherId)])
   const links = await FamilyLink.find({ fisherId: trip.fisherId }).select('familyId')
   for (const link of links) recipients.add(String(link.familyId))
+  const jettyUsers = await User.find({ role: 'jetty' }).select('_id')
+  for (const jetty of jettyUsers) recipients.add(String(jetty._id))
 
   await Notification.insertMany(
     [...recipients].map((userId) => ({
@@ -92,6 +117,8 @@ tripsRouter.post('/', requireAuth, requireRole('fisherman'), async (req: AuthReq
         battery: 92,
         lastLocation: 'Demo point · Arabian Sea, Goa',
         lastLocationAt: new Date(),
+        latitude: 15.2993,
+        longitude: 74.124,
         source: 'demo',
       })
       await addEvent(trip, 'CHECK_IN', 'Trip started in demo mode')
@@ -136,6 +163,8 @@ tripsRouter.post('/:id/location', requireAuth, requireRole('fisherman'), async (
     trip.lastLocation = input.location
     trip.lastLocationAt = new Date()
     if (input.battery !== undefined) trip.battery = input.battery
+    if (input.latitude !== undefined) trip.latitude = input.latitude
+    if (input.longitude !== undefined) trip.longitude = input.longitude
     await trip.save()
     await publishTripUpdate(trip, 'Trip location or beacon data updated')
     return res.json({ trip: publicTrip(trip) })
@@ -161,6 +190,117 @@ tripsRouter.get('/family/current', requireAuth, requireRole('family'), async (re
 
     const trips = await Trip.find({ fisherId: { $in: fisherIds }, active: true }).sort({ updatedAt: -1 })
     return res.json({ trips: trips.map(publicTrip) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+tripsRouter.get('/jetty/overview', requireAuth, requireRole('jetty'), async (req: AuthRequest, res, next) => {
+  try {
+    const jetty = await User.findById(req.userId).select('profile')
+    const jettyLatitude = jetty?.profile?.latitude
+    const jettyLongitude = jetty?.profile?.longitude
+    const radiusKm = jetty?.profile?.nearbyRadiusKm ?? 25
+    const trips = await Trip.find({ active: true }).populate('fisherId', 'name phone profile village').sort({ updatedAt: -1 })
+    const tripIds = trips.map((trip) => trip._id)
+    const responses = await JettyResponse.find({ tripId: { $in: tripIds }, jettyId: req.userId })
+    const responseByTrip = new Map(responses.map((response) => [String(response.tripId), response]))
+
+    const visibleTrips = trips.filter((trip) => {
+      const emergency = trip.status === 'SOS_SENT' || trip.status === 'EMERGENCY_ACTIVE'
+      if (!jettyLatitude || !jettyLongitude) return emergency
+      if (trip.latitude == null || trip.longitude == null) return emergency
+      const distance = distanceKm(jettyLatitude, jettyLongitude, trip.latitude, trip.longitude)
+      return emergency || distance <= radiusKm
+    })
+
+    return res.json({
+      configured: jettyLatitude != null && jettyLongitude != null,
+      radiusKm,
+      totalActive: trips.length,
+      trips: visibleTrips.map((trip) => {
+        const fisherman = trip.fisherId as unknown as InstanceType<typeof User>
+        const response = responseByTrip.get(String(trip._id))
+        const locationStale =
+          trip.lastLocationAt == null ||
+          Date.now() - trip.lastLocationAt.getTime() > 30 * 60000
+        const distance =
+          jettyLatitude != null &&
+          jettyLongitude != null &&
+          trip.latitude != null &&
+          trip.longitude != null
+            ? Math.round(distanceKm(jettyLatitude, jettyLongitude, trip.latitude, trip.longitude) * 10) / 10
+            : null
+        return {
+          ...publicTrip(trip),
+          distanceKm: distance,
+          locationStale,
+          fisherman: {
+            id: String(fisherman._id),
+            name: fisherman.name,
+            phone: fisherman.phone,
+            village: fisherman.profile?.village || '',
+            boatName: fisherman.profile?.boatName || '',
+          },
+          jettyResponse: response ? {
+            status: response.status,
+            acknowledgedAt: response.acknowledgedAt?.toISOString() || null,
+            familyContactedAt: response.familyContactedAt?.toISOString() || null,
+            resolvedAt: response.resolvedAt?.toISOString() || null,
+          } : {
+            status: 'PENDING',
+            acknowledgedAt: null,
+            familyContactedAt: null,
+            resolvedAt: null,
+          },
+        }
+      }),
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+tripsRouter.patch('/:id/jetty-response', requireAuth, requireRole('jetty'), async (req: AuthRequest, res, next) => {
+  try {
+    const input = z.object({
+      status: z.enum(['ACKNOWLEDGED', 'FAMILY_CONTACTED', 'RESOLVED']),
+    }).parse(req.body)
+    const trip = await Trip.findById(req.params.id)
+    if (!trip) return res.status(404).json({ error: 'Trip not found' })
+
+    const now = new Date()
+    const response = await JettyResponse.findOneAndUpdate(
+      { tripId: trip._id, jettyId: req.userId },
+      {
+        tripId: trip._id,
+        jettyId: req.userId,
+        status: input.status,
+        ...(input.status === 'ACKNOWLEDGED' ? { acknowledgedAt: now } : {}),
+        ...(input.status === 'FAMILY_CONTACTED' ? { familyContactedAt: now } : {}),
+        ...(input.status === 'RESOLVED' ? { resolvedAt: now } : {}),
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    )
+
+    await Notification.create({
+      userId: trip.fisherId,
+      tripId: trip._id,
+      type: 'SYSTEM',
+      title: 'Jetty response updated',
+      message: `Jetty status changed to ${input.status}`,
+      deliveryStatus: 'delivered',
+    })
+    publishRealtime(String(trip.fisherId), 'trip:update', { tripId: String(trip._id), status: trip.status, jettyResponse: input.status })
+
+    return res.json({
+      response: {
+        status: response.status,
+        acknowledgedAt: response.acknowledgedAt?.toISOString() || null,
+        familyContactedAt: response.familyContactedAt?.toISOString() || null,
+        resolvedAt: response.resolvedAt?.toISOString() || null,
+      },
+    })
   } catch (error) {
     next(error)
   }

@@ -3,10 +3,13 @@ import { useTranslation } from 'react-i18next'
 import styles from './SeaConditionsPage.module.css'
 import { useEffect, useState } from 'react'
 import { getSeaConditions, refreshSeaConditions, type SeaData } from '../../services/dataApi'
+import { useAuthStore } from '../../store/authStore'
 
 export default function SeaConditionsPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const role = useAuthStore((state) => state.user?.role)
+  const dashboardPath = role === 'jetty' ? '/jetty' : '/fisherman'
   const [sea, setSea] = useState<SeaData | null>(null)
   useEffect(() => {
     void getSeaConditions().then(setSea).catch((error) => console.error(error))
@@ -30,7 +33,7 @@ export default function SeaConditionsPage() {
     <main className={styles.page}>
       <div className={styles.shell}>
         <header className={styles.topbar}>
-          <button className={styles.back} onClick={() => navigate('/fisherman')} aria-label={t('back')}>← <span>{t('back')}</span></button>
+          <button className={styles.back} onClick={() => navigate(dashboardPath)} aria-label={t('back')}>← <span>{t('back')}</span></button>
           <span className={styles.brand}>{t('brand')}</span>
           <span className={styles.demo}>{sea?.provenance === 'provider' ? 'Verified provider' : sea?.provenance === 'demo' ? t('seaDemoTag') : 'Unavailable'}</span>
         </header>
@@ -66,9 +69,11 @@ export default function SeaConditionsPage() {
           <div><h2>{t('seaSafetyTitle')}</h2><p>{t('seaSafetyBody')}</p></div>
         </section>
         <div className={styles.actions}>
-          <button className={styles.secondary} onClick={() => navigate('/fisherman')}>← {t('seaBackDashboard')}</button>
+          <button className={styles.secondary} onClick={() => navigate(dashboardPath)}>← {t('seaBackDashboard')}</button>
           <button className={styles.secondary} onClick={() => void refresh()}>Refresh sea data</button>
-          <button className={styles.primary} onClick={() => navigate('/fisherman/trip')}>{t('seaPlanTrip')} →</button>
+          {role === 'fisherman' && (
+            <button className={styles.primary} onClick={() => navigate('/fisherman/trip')}>{t('seaPlanTrip')} →</button>
+          )}
         </div>
         <p className={styles.disclaimer}>{t('seaDisclaimer')}</p>
       </div>

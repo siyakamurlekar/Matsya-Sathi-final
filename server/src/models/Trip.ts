@@ -21,6 +21,8 @@ const tripSchema = new mongoose.Schema(
     battery: { type: Number, required: true, min: 0, max: 100, default: 92 },
     lastLocation: { type: String, trim: true, maxlength: 250, default: 'Not available' },
     lastLocationAt: { type: Date, default: null },
+    latitude: { type: Number, min: -90, max: 90, default: null },
+    longitude: { type: Number, min: -180, max: 180, default: null },
     source: { type: String, enum: ['demo', 'device', 'server'], default: 'demo' },
   },
   { timestamps: true },

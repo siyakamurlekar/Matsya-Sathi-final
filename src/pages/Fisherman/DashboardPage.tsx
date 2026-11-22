@@ -33,7 +33,7 @@ export default function DashboardPage() {
             {t('logout')}
           </button>
           <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
-            <button className={styles.outlineButton} onClick={() => navigate('/notifications')}>🔔 {t('notifications')}</button>
+            <button className={styles.outlineButton} onClick={() => navigate('/fisherman/notifications')}>🔔 {t('notifications')}</button>
             <button className={styles.outlineButton} onClick={() => navigate('/profile')}>⚙️ {t('profileSettings')}</button>
           </div>
         </header>

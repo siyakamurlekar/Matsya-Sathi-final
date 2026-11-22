@@ -2,9 +2,12 @@ export interface ApiUser {
   id: string
   name: string
   phone: string
-  role: 'fisherman' | 'family'
+  role: 'fisherman' | 'family' | 'jetty'
   village: string
   boatName: string
+  latitude: number | null
+  longitude: number | null
+  nearbyRadiusKm: number
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -26,7 +29,7 @@ export function register(input: {
   name: string
   phone: string
   password: string
-  role: 'fisherman' | 'family'
+  role: 'fisherman' | 'family' | 'jetty'
   village?: string
   boatName?: string
 }) {
@@ -39,7 +42,7 @@ export function register(input: {
 export function login(input: {
   phone: string
   password: string
-  role?: 'fisherman' | 'family'
+  role?: 'fisherman' | 'family' | 'jetty'
 }) {
   return request<{ token: string; user: ApiUser }>('/auth/login', {
     method: 'POST',
@@ -51,7 +54,14 @@ export function getProfile() {
   return request<{ user: ApiUser }>('/auth/me')
 }
 
-export function updateProfile(input: { name?: string; village?: string; boatName?: string }) {
+export function updateProfile(input: {
+  name?: string
+  village?: string
+  boatName?: string
+  latitude?: number | null
+  longitude?: number | null
+  nearbyRadiusKm?: number
+}) {
   return request<{ user: ApiUser }>('/auth/me', {
     method: 'PATCH',
     body: JSON.stringify(input),

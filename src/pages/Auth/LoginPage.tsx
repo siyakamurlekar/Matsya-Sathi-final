@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
 
   if (user) {
-    return <Navigate to={user.role === 'fisherman' ? '/fisherman' : '/family'} replace />
+    return <Navigate to={user.role === 'fisherman' ? '/fisherman' : user.role === 'family' ? '/family' : '/jetty'} replace />
   }
 
   if (!selectedRole) {
@@ -36,7 +36,14 @@ export default function LoginPage() {
         phone: result.user.phone,
         role: result.user.role,
       })
-      navigate(result.user.role === 'fisherman' ? '/fisherman' : '/family', { replace: true })
+      navigate(
+        result.user.role === 'fisherman'
+          ? '/fisherman'
+          : result.user.role === 'family'
+            ? '/family'
+            : '/jetty',
+        { replace: true },
+      )
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to sign in')
     }
@@ -50,7 +57,7 @@ export default function LoginPage() {
 
         <h1>{t('welcomeAboard')}</h1>
         <p className={styles.description}>
-          {t('loginDescription', { role: t(selectedRole === 'fisherman' ? 'fishermanRole' : 'familyRole') })}
+          {t('loginDescription', { role: t(selectedRole === 'fisherman' ? 'fishermanRole' : selectedRole === 'family' ? 'familyRole' : 'jettyRole') })}
         </p>
 
         <form onSubmit={handleSubmit} className={styles.form}>

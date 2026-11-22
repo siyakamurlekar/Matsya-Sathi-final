@@ -9,7 +9,7 @@ import { User } from '../models/User.js'
 export const authRouter = Router()
 
 const phoneSchema = z.string().regex(/^[6-9]\d{9}$/, 'Phone must be a valid 10-digit Indian number')
-const roleSchema = z.enum(['fisherman', 'family'])
+const roleSchema = z.enum(['fisherman', 'family', 'jetty'])
 
 const registerSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -30,6 +30,9 @@ const updateSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   village: z.string().trim().max(120).optional(),
   boatName: z.string().trim().max(120).optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
+  nearbyRadiusKm: z.number().min(1).max(500).optional(),
 })
 
 function publicUser(user: InstanceType<typeof User>) {
@@ -40,6 +43,9 @@ function publicUser(user: InstanceType<typeof User>) {
     role: user.role,
     village: user.profile?.village || '',
     boatName: user.profile?.boatName || '',
+    latitude: user.profile?.latitude ?? null,
+    longitude: user.profile?.longitude ?? null,
+    nearbyRadiusKm: user.profile?.nearbyRadiusKm ?? 25,
   }
 }
 
@@ -105,6 +111,9 @@ authRouter.patch('/me', requireAuth, async (req: AuthRequest, res, next) => {
     if (input.name !== undefined) user.name = input.name
     if (input.village !== undefined) user.profile.village = input.village
     if (input.boatName !== undefined) user.profile.boatName = input.boatName
+    if (input.latitude !== undefined) user.profile.latitude = input.latitude
+    if (input.longitude !== undefined) user.profile.longitude = input.longitude
+    if (input.nearbyRadiusKm !== undefined) user.profile.nearbyRadiusKm = input.nearbyRadiusKm
     await user.save()
 
     return res.json({ user: publicUser(user) })

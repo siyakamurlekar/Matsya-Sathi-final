@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { getCurrentTrip, getFamilyTrips, resetTrip, startTrip, updateTripStatus } from '../services/tripApi'
+import { getCurrentTrip, getFamilyTrips, resetTrip, startTrip, updateTripStatus, updateTripLocation } from '../services/tripApi'
 
 export type TripStatus = 'IDLE' | 'CHECK_IN' | 'TRIP_ACTIVE' | 'CONNECTIVITY_WEAK' | 'LORA_RELAY' | 'SOS_SENT' | 'EMERGENCY_ACTIVE' | 'SAFE_RETURN'
 type TripState = {
@@ -46,6 +46,24 @@ export const useTripStore = create<TripState>()(persist((set) => ({
           loading: false,
           error: null,
         })
+        if (navigator.geolocation && trip.latitude == null && trip.longitude == null) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              void updateTripLocation(trip.id, {
+                location: 'Beacon/GPS demo point',
+                battery: trip.battery,
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              }).then((locationResult) => set({
+                status: locationResult.trip.status,
+                lastLocation: locationResult.trip.lastLocation,
+                lastUpdate: locationResult.trip.lastUpdatedAt,
+                battery: locationResult.trip.battery,
+              })).catch((error) => console.error(error))
+            },
+            () => undefined,
+          )
+        }
       }
     } catch (error) {
       set({

@@ -21,7 +21,7 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
 }
 
-export function requireRole(role: 'fisherman' | 'family') {
+export function requireRole(role: 'fisherman' | 'family' | 'jetty') {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.userId) return res.status(401).json({ error: 'Authentication required' })
     const { User } = await import('../models/User.js')

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import styles from './Schemes.module.css'
+import { useAuthStore } from '../../store/authStore'
 
 type Answer = boolean | null
 type Scheme = { id: string; title: string; desc: string; office: string; requires: (a: Answer[]) => boolean }
@@ -15,6 +16,8 @@ const schemes: Scheme[] = [
 export default function SchemesPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const role = useAuthStore((state) => state.user?.role)
+  const dashboardPath = role === 'jetty' ? '/jetty' : '/fisherman'
   const [tab, setTab] = useState<'browse' | 'quiz'>('browse')
   const [answers, setAnswers] = useState<Answer[]>([null, null, null, null])
   const [showResults, setShowResults] = useState(false)
@@ -26,7 +29,7 @@ export default function SchemesPage() {
     setShowResults(false)
   }
   return <main className={styles.page}><div className={styles.wrap}>
-    <button type="button" className={styles.back} onClick={() => navigate('/fisherman')}>← {t('back')}</button>
+    <button type="button" className={styles.back} onClick={() => navigate(dashboardPath)}>← {t('back')}</button>
     <div className={styles.intro}><span className={styles.eyebrow}>{t('schemes')}</span><h1>{t('schemeTitle')}</h1><p>{t('schemeSubtitle')}</p></div>
     <div className={styles.tabs} role="tablist" aria-label={t('schemeTitle')}>
       <button type="button" role="tab" aria-selected={tab === 'browse'} className={tab === 'browse' ? styles.active : ''} onClick={() => setTab('browse')}>{t('schemeBrowseTab')}</button>

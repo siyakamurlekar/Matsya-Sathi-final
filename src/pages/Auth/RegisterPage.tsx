@@ -18,7 +18,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
 
   if (user) {
-    return <Navigate to={user.role === 'fisherman' ? '/fisherman' : '/family'} replace />
+    return <Navigate to={user.role === 'fisherman' ? '/fisherman' : user.role === 'family' ? '/family' : '/jetty'} replace />
   }
 
   if (!selectedRole) {
@@ -46,7 +46,14 @@ export default function RegisterPage() {
         phone: result.user.phone,
         role: result.user.role,
       })
-      navigate(result.user.role === 'fisherman' ? '/fisherman' : '/family', { replace: true })
+      navigate(
+        result.user.role === 'fisherman'
+          ? '/fisherman'
+          : result.user.role === 'family'
+            ? '/family'
+            : '/jetty',
+        { replace: true },
+      )
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to create account')
     }
@@ -60,7 +67,7 @@ export default function RegisterPage() {
 
         <h1>{t('getStarted')}</h1>
         <p className={styles.description}>
-          {t('registerDescription', { role: t(selectedRole === 'fisherman' ? 'fishermanRole' : 'familyRole') })}
+          {t('registerDescription', { role: t(selectedRole === 'fisherman' ? 'fishermanRole' : selectedRole === 'family' ? 'familyRole' : 'jettyRole') })}
         </p>
 
         <form onSubmit={handleSubmit} className={styles.form}>

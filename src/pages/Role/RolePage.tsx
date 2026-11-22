@@ -24,6 +24,10 @@ const roles: {
     description: 'familyDescription',
     features: ['tripMonitoring', 'safetyUpdates', 'emergencyAlerts'],
   },
+  {
+    id: 'jetty', icon: '🛟', title: 'jettyRole', description: 'jettyDescription',
+    features: ['jettyFeatureAlerts', 'jettyFeatureRelay', 'jettyFeatureResponse'],
+  },
 ]
 
 export default function RolePage() {

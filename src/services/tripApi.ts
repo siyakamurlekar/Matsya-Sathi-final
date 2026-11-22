@@ -8,6 +8,8 @@ export interface ApiTrip {
   battery: number
   lastLocation: string
   lastLocationAt: string | null
+  latitude: number | null
+  longitude: number | null
   source: 'demo' | 'device' | 'server'
   startedAt: string | null
   lastUpdatedAt: string | null
@@ -51,6 +53,16 @@ export function resetTrip() {
   return request<{ trip: ApiTrip | null }>('/current', { method: 'DELETE' })
 }
 
+export function updateTripLocation(
+  tripId: string,
+  input: { location: string; battery?: number; latitude?: number; longitude?: number },
+) {
+  return request<{ trip: ApiTrip }>(`/${tripId}/location`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
 export interface FamilyLink {
   fishermanId: string
   name: string
@@ -67,4 +79,41 @@ export function linkFisherman(fishermanPhone: string) {
 
 export function getFamilyLinks() {
   return request<{ links: FamilyLink[] }>('/family-links')
+}
+
+export interface JettyOverviewTrip extends ApiTrip {
+  distanceKm: number | null
+  locationStale: boolean
+  fisherman: {
+    id: string
+    name: string
+    phone: string
+    village: string
+    boatName: string
+  }
+  jettyResponse: {
+    status: 'PENDING' | 'ACKNOWLEDGED' | 'FAMILY_CONTACTED' | 'RESOLVED'
+    acknowledgedAt: string | null
+    familyContactedAt: string | null
+    resolvedAt: string | null
+  }
+}
+
+export function getJettyOverview() {
+  return request<{
+    configured: boolean
+    radiusKm: number
+    totalActive: number
+    trips: JettyOverviewTrip[]
+  }>('/jetty/overview')
+}
+
+export function updateJettyResponse(
+  tripId: string,
+  status: 'ACKNOWLEDGED' | 'FAMILY_CONTACTED' | 'RESOLVED',
+) {
+  return request<{ response: JettyOverviewTrip['jettyResponse'] }>(`/${tripId}/jetty-response`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
 }

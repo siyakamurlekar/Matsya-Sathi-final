@@ -15,6 +15,7 @@ import SOSPage from '../pages/Trip/SOSPage'
 import SchemesPage from '../pages/Schemes/SchemesPage'
 import NotificationsPage from '../pages/Updates/NotificationsPage'
 import ProfilePage from '../pages/Updates/ProfilePage'
+import JettyDashboardPage from '../pages/Jetty/JettyDashboardPage'
 
 export default function AppRoutes() {
   const navigate = useNavigate()
@@ -59,12 +60,28 @@ export default function AppRoutes() {
       : <Navigate to="/login" replace />
   }
 />
-      <Route path="/fisherman/sea" element={user?.role === 'fisherman' ? <SeaConditionsPage /> : <Navigate to="/login" replace />} />
+      <Route path="/jetty" element={user?.role === 'jetty' ? <JettyDashboardPage /> : <Navigate to="/login" replace />} />
+      <Route path="/fisherman/sea" element={user?.role === 'fisherman' || user?.role === 'jetty' ? <SeaConditionsPage /> : <Navigate to="/login" replace />} />
+      <Route path="/jetty/sea" element={user?.role === 'jetty' ? <SeaConditionsPage /> : <Navigate to="/login" replace />} />
       <Route path="/fisherman/trip" element={user?.role === 'fisherman' ? <TripPage /> : <Navigate to="/login" replace />} />
       <Route path="/family/tracking" element={user?.role === 'family' ? <FamilyTrackingPage /> : <Navigate to="/login" replace />} />
-      <Route path="/fisherman/schemes" element={user?.role === 'fisherman' ? <SchemesPage /> : <Navigate to="/login" replace />} />
+      <Route path="/fisherman/schemes" element={user?.role === 'fisherman' || user?.role === 'jetty' ? <SchemesPage /> : <Navigate to="/login" replace />} />
+      <Route path="/jetty/schemes" element={user?.role === 'jetty' ? <SchemesPage /> : <Navigate to="/login" replace />} />
       <Route path="/sos" element={user?.role === 'fisherman' ? <SOSPage /> : <Navigate to="/login" replace />} />
-      <Route path="/notifications" element={user ? <NotificationsPage /> : <Navigate to="/login" replace />} />
+      <Route
+        path="/notifications"
+        element={
+          user
+            ? <Navigate
+                to={user.role === 'fisherman' ? '/fisherman/notifications' : user.role === 'family' ? '/family/notifications' : '/jetty/notifications'}
+                replace
+              />
+            : <Navigate to="/login" replace />
+        }
+      />
+      <Route path="/fisherman/notifications" element={user?.role === 'fisherman' ? <NotificationsPage /> : <Navigate to="/login" replace />} />
+      <Route path="/family/notifications" element={user?.role === 'family' ? <NotificationsPage /> : <Navigate to="/login" replace />} />
+      <Route path="/jetty/notifications" element={user?.role === 'jetty' ? <NotificationsPage /> : <Navigate to="/login" replace />} />
       <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
