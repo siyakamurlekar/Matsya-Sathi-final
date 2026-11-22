@@ -15,6 +15,7 @@ import SOSPage from '../pages/Trip/SOSPage'
 import SchemesPage from '../pages/Schemes/SchemesPage'
 import NotificationsPage from '../pages/Updates/NotificationsPage'
 import ProfilePage from '../pages/Updates/ProfilePage'
+import JettyDashboardPage from '../pages/Jetty/JettyDashboardPage'
 
 export default function AppRoutes() {
   const navigate = useNavigate()
@@ -59,6 +60,7 @@ export default function AppRoutes() {
       : <Navigate to="/login" replace />
   }
 />
+      <Route path="/jetty" element={user?.role === 'jetty' ? <JettyDashboardPage /> : <Navigate to="/login" replace />} />
       <Route path="/fisherman/sea" element={user?.role === 'fisherman' ? <SeaConditionsPage /> : <Navigate to="/login" replace />} />
       <Route path="/fisherman/trip" element={user?.role === 'fisherman' ? <TripPage /> : <Navigate to="/login" replace />} />
       <Route path="/family/tracking" element={user?.role === 'family' ? <FamilyTrackingPage /> : <Navigate to="/login" replace />} />

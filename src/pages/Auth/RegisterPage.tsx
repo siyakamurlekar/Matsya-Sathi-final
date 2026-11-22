@@ -15,7 +15,7 @@ export default function RegisterPage() {
   const [boatName, setBoatName] = useState('')
 
   if (user) {
-    return <Navigate to={user.role === 'fisherman' ? '/fisherman' : '/family'} replace />
+    return <Navigate to={user.role === 'fisherman' ? '/fisherman' : user.role === 'family' ? '/family' : '/jetty'} replace />
   }
 
   if (!selectedRole) {
@@ -34,7 +34,7 @@ export default function RegisterPage() {
 
     login({ name: name.trim(), phone, role: selectedRole })
 
-    navigate(selectedRole === 'fisherman' ? '/fisherman' : '/family', {
+    navigate(selectedRole === 'fisherman' ? '/fisherman' : selectedRole === 'family' ? '/family' : '/jetty', {
       replace: true,
     })
   }

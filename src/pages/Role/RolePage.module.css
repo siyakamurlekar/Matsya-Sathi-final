@@ -182,3 +182,4 @@
     margin-bottom: 28px;
   }
 }
+@media (min-width: 760px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .card { padding: 22px; } }

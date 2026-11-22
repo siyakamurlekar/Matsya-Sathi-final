@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-export type UserRole = 'fisherman' | 'family'
+export type UserRole = 'fisherman' | 'family' | 'jetty'
 export interface User { name: string; phone: string; role: UserRole }
 interface AuthState {
   selectedRole: UserRole | null
